@@ -13,6 +13,8 @@ main{max-width:1000px;margin:0 auto;padding:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.stat b{font-size:26px;color:var(--red);display:block}
 .tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:var(--soft)}
 .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;background:var(--soft);border:1px solid var(--gold)}.badge.w{background:var(--red);color:#fff;border-color:var(--red)}
+.badge.y{background:#f5a623;color:#fff;border-color:#f5a623}.badge.ok{background:#2e7d32;color:#fff;border-color:#2e7d32}
+.donut{width:130px;height:130px;border-radius:50%;flex:0 0 130px}
 input,select,textarea{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
 label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
 .login{max-width:380px;margin:24px auto;text-align:center}.login img{width:120px;height:120px}.login h1{margin:6px 0 0;letter-spacing:.12em;color:var(--red)}.login label{text-align:left}
@@ -41,20 +43,44 @@ let users=[{u:'kaisershibghatullah',p:'etik123',n:'Kaiser Shibghatullah',r:'komi
 let stu=[['1202220001','Andi Pratama','FRI','dudububu'],['1202220002','Sari Melati','FRI','dudububu'],['1202220003','Rafi Alfarizi','FRI','dudububu'],['1202220004','Dimas Nugraha','FRI','wali2'],['1202220005','Bella Kirana','FRI','wali2'],['1302220006','Nadia Putri','FIF','wali2']].map(a=>({nim:a[0],n:a[1],f:a[2],w:a[3]}));
 const mk=(id,nim,m,j,st,ago,sk)=>({id,nim,mk:m,jenis:j,pel:'Pengawas ujian',kron:'Terlapor tertangkap saat pengawasan dan bukti dicatat oleh pengawas.',ev:'Foto barang bukti & lembar jawaban',st,tgl:day(ago),sanksi:sk||'',log:[{t:day(ago),x:'Laporan diterima'}]});
 let cases=[mk('LP-001','1202220001','Statistika Industri','Menyontek saat ujian',2,12),mk('LP-002','1202220002','Logistik Dasar','Plagiarisme',1,6),mk('LP-003','1202220004','Basis Data','Joki tugas/ujian',4,22,'Nilai E pada mata kuliah + skorsing 1 semester'),mk('LP-004','1302220006','Pemrograman','Menyontek saat ujian',0,2),mk('LP-005','1202220003','Sistem Informasi Logistik','Menyontek saat ujian',6,35,'Nilai E pada mata kuliah'),mk('LP-006','1202220005','Riset Operasi','Pemalsuan data',3,27)];
-let seq=7,S={u:null,v:'dash',q:'',f:'',sel:null,e:''};
+let seq=7,S={u:null,v:'dash',q:'',f:'',k:'',sf:'',sel:null,e:''};
 const sd=n=>stu.find(s=>s.nim==n);
 const left=c=>c.st==6?null:30-Math.floor((Date.now()-Date.parse(c.tgl))/864e5);
+const mttr=v=>{const d=v.filter(c=>c.st==6).map(c=>Math.round((Date.parse(c.log[c.log.length-1].t)-Date.parse(c.tgl))/864e5));return d.length?Math.round(d.reduce((a,b)=>a+b,0)/d.length)+' hari':'—'};
+function exportCSV(){const q=S.q.toLowerCase(),r=vis().filter(c=>{const s=sd(c.nim),l=left(c),sla=l==null?'ok':l<0?'over':l<=7?'near':'ok';return(S.f===''||c.st==S.f)&&(!S.k||c.jenis==S.k)&&(!S.sf||S.sf==sla)&&(c.id+s.n+s.nim).toLowerCase().includes(q)});
+const rows=[['ID','Nama','NIM','Fakultas','Mata Kuliah','Jenis Pelanggaran','Tahap','Tanggal Masuk','Sisa SLA (hari)'],...r.map(c=>{const s=sd(c.nim),l=left(c);return[c.id,s.n,s.nim,s.f,c.mk,c.jenis,ST[c.st],c.tgl,l==null?'Selesai':l]})];
+const csv=rows.map(row=>row.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),a=document.createElement('a');
+a.href=URL.createObjectURL(blob);a.download='lapinet_kasus_'+today()+'.csv';a.click()}
 const vis=()=>cases.filter(c=>{const s=sd(c.nim),r=S.u.r;return r=='komisi'||(r=='wali'&&s.w==S.u.u)||(r=='kmhs'&&s.f==S.u.f)});
 const canAct=c=>S.u.r=='komisi'||(S.u.r=='kmhs'&&c.st>=4&&c.st<6);
 const tb=(h,r)=>`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${r.map(x=>`<tr>${x.map(y=>`<td>${y}</td>`).join('')}</tr>`).join('')}</table></div>`;
 function login(){return `<div class="card login"><img src="${LOGO}" alt="Logo LAPINET"><h1>LAPINET</h1><div>Laporan Informasi Etik</div><p><small>Telkom University</small></p><label>Username</label><input id="lu" autocomplete="username"><label>Password</label><input id="lp" type="password" autocomplete="current-password" onkeydown="if(event.key=='Enter')doLogin()"><p class="err">${E(S.e)}</p><button class="btn" style="width:100%" onclick="doLogin()">Masuk</button><p><a href="#" onclick="S.v='panduan';render();return false">Panduan penggunaan &amp; akun demo</a></p></div>`}
 function doLogin(){const x=users.find(u=>u.u==$('#lu').value.trim()&&u.p==$('#lp').value);if(!x){S.e='Username atau password salah.';render();return}S.u=x;S.e='';S.v='dash';render()}
-function dash(){const v=vis(),a=v.filter(c=>c.st<6);
-return `<div class="grid">${[['Total kasus',v.length],['Sedang diproses',a.length],['Selesai',v.length-a.length],['SLA ≤ 7 hari',a.filter(c=>left(c)<=7).length]].map(x=>`<div class="card stat"><b>${x[1]}</b>${x[0]}</div>`).join('')}</div>
+function dash(){const v=vis(),a=v.filter(c=>c.st<6),over=a.filter(c=>left(c)<0).length,near=a.filter(c=>{const l=left(c);return l!=null&&l>=0&&l<=7}).length;
+const stats=[['Total kasus',v.length],['Sedang diproses',a.length],['Selesai',v.length-a.length],['Lewat SLA (Overdue)',over],['Mendekati SLA (≤7 hari)',near],['Rata-rata Penanganan',mttr(v)]];
+const jc={};v.forEach(c=>jc[c.jenis]=(jc[c.jenis]||0)+1);
+const jk=Object.keys(jc),jt=v.length||1,pal=['#c8102e','#f4a7ae','#ffb703','#2e7d32','#1e6091','#6d597a','#e07a5f'];
+let acc=0;const segs=jk.map((k,i)=>{const p=jc[k]/jt*100,s=`${pal[i%pal.length]} ${acc}% ${acc+p}%`;acc+=p;return s}).join(',');
+const donut=jk.length?`<div class="row" style="align-items:center;gap:20px;flex-wrap:wrap"><div class="donut" style="background:conic-gradient(${segs})"></div><div style="flex:1;min-width:160px">${jk.map((k,i)=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0"><span style="width:12px;height:12px;border-radius:3px;background:${pal[i%pal.length]};display:inline-block"></span>${E(k)} — ${jc[k]} (${Math.round(jc[k]/jt*100)}%)</div>`).join('')}</div></div>`:'<p>Belum ada data.</p>';
+const mk=[];for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);mk.push(d.toISOString().slice(0,7))}
+const trend=mk.map(m=>({m,k:v.filter(c=>c.tgl.slice(0,7)==m).length})),tmax=Math.max(1,...trend.map(x=>x.k));
+const fc={};v.forEach(c=>{const f=sd(c.nim).f;fc[f]=(fc[f]||0)+1});
+const qa=S.u.r=='komisi'?`<div class="card"><h3>Aksi Cepat</h3><div class="row"><button class="btn" onclick="S.f='3';render()">Jadwalkan Sidang Etik</button><button class="btn o" onclick="window.print()">Cetak Summary Laporan</button></div></div>`:'';
+return qa+`<div class="grid">${stats.map(x=>`<div class="card stat"><b>${x[1]}</b>${x[0]}</div>`).join('')}</div>
+<div class="card"><h3>Distribusi Jenis Pelanggaran</h3>${donut}</div>
+<div class="card"><h3>Tren Kasus per Bulan</h3><div class="bars">${trend.map(x=>`<div><span>${x.m}</span><i style="width:${x.k/tmax*220}px"></i>${x.k}</div>`).join('')}</div></div>
 <div class="card"><h3>Kasus per tahap</h3><div class="bars">${ST.map((x,i)=>{const k=v.filter(c=>c.st==i).length;return `<div><span>${x}</span><i style="width:${k*30}px"></i>${k}</div>`}).join('')}</div></div>
-<div class="card"><div class="row"><h3>${S.u.r=='wali'?'Kasus mahasiswa perwalian saya':'Daftar kasus'}</h3><div class="row"><input placeholder="Cari nama / NIM / ID" value="${E(S.q)}" oninput="S.q=this.value;tbl()" style="width:190px"><select onchange="S.f=this.value;tbl()" style="width:auto"><option value="">Semua tahap</option>${ST.map((x,i)=>`<option value="${i}" ${S.f==i&&S.f!==''?'selected':''}>${x}</option>`).join('')}</select></div></div><div class="tw" id="tbl"></div></div>`}
-function tbl(){const q=S.q.toLowerCase(),r=vis().filter(c=>{const s=sd(c.nim);return(S.f===''||c.st==S.f)&&(c.id+s.n+s.nim).toLowerCase().includes(q)});
-$('#tbl').innerHTML=r.length?`<table><tr><th>ID</th><th>Terlapor</th><th>Pelanggaran</th><th>Tahap</th><th>SLA</th><th></th></tr>${r.map(c=>{const s=sd(c.nim),l=left(c);return `<tr><td>${c.id}</td><td>${E(s.n)}<br><small>${s.nim}</small></td><td>${E(c.jenis)}</td><td><span class="badge">${ST[c.st]}</span></td><td>${l==null?'—':`<span class="badge ${l<=7?'w':''}">${l} hari</span>`}</td><td><button class="btn o" onclick="S.sel='${c.id}';render()">Buka</button></td></tr>`}).join('')}</table>`:'<p>Tidak ada kasus.</p>'}
+${S.u.r=='komisi'?`<div class="card"><h3>Distribusi per Fakultas</h3><div class="bars">${Object.keys(fc).length?Object.keys(fc).map(f=>`<div><span>${f}</span><i style="width:${fc[f]*30}px"></i>${fc[f]}</div>`).join(''):'<p>Belum ada data.</p>'}</div></div>`:''}
+<div class="card"><div class="row"><h3>${S.u.r=='wali'?'Kasus mahasiswa perwalian saya':'Daftar kasus'}</h3><button class="btn o" onclick="exportCSV()">⬇ Ekspor CSV</button></div>
+<div class="row" style="margin-top:8px">
+<input placeholder="Cari nama / NIM / ID" value="${E(S.q)}" oninput="S.q=this.value;tbl()" style="width:170px">
+<select onchange="S.f=this.value;tbl()" style="width:auto"><option value="">Semua tahap</option>${ST.map((x,i)=>`<option value="${i}" ${S.f==i&&S.f!==''?'selected':''}>${x}</option>`).join('')}</select>
+<select onchange="S.k=this.value;tbl()" style="width:auto"><option value="">Semua jenis</option>${jk.map(k=>`<option ${S.k==k?'selected':''}>${k}</option>`).join('')}</select>
+<select onchange="S.sf=this.value;tbl()" style="width:auto"><option value="">Semua status SLA</option><option value="over" ${S.sf=='over'?'selected':''}>Lewat SLA</option><option value="near" ${S.sf=='near'?'selected':''}>Mendekati (≤7 hari)</option><option value="ok" ${S.sf=='ok'?'selected':''}>Aman</option></select>
+</div><div class="tw" id="tbl"></div></div>`}
+function tbl(){const q=S.q.toLowerCase(),r=vis().filter(c=>{const s=sd(c.nim),l=left(c),sla=l==null?'ok':l<0?'over':l<=7?'near':'ok';return(S.f===''||c.st==S.f)&&(!S.k||c.jenis==S.k)&&(!S.sf||S.sf==sla)&&(c.id+s.n+s.nim).toLowerCase().includes(q)});
+$('#tbl').innerHTML=r.length?`<table><tr><th>ID</th><th>Terlapor</th><th>Tgl Masuk</th><th>Pelanggaran</th><th>Tahap</th><th>SLA</th><th></th></tr>${r.map(c=>{const s=sd(c.nim),l=left(c),cls=l==null?'ok':l<0?'w':l<=7?'y':'ok',lbl=l==null?'Selesai':l<0?'Lewat '+Math.abs(l)+' hr':l+' hari';return `<tr><td>${c.id}</td><td>${E(s.n)}<br><small>${s.nim} · ${s.f}</small></td><td>${c.tgl}</td><td>${E(c.jenis)}</td><td><span class="badge">${ST[c.st]}</span></td><td><span class="badge ${cls}">${lbl}</span></td><td><button class="btn o" onclick="S.sel='${c.id}';render()">Buka</button></td></tr>`}).join('')}</table>`:'<p>Tidak ada kasus.</p>'}
 function detail(){const c=cases.find(x=>x.id==S.sel);if(!c||!vis().includes(c))return'';const s=sd(c.nim),l=left(c);
 return `<div class="modal" onclick="if(event.target==this){S.sel=null;render()}"><div class="card"><div class="row"><h2>${c.id} · ${E(c.jenis)}</h2><button class="btn o" onclick="S.sel=null;render()">Tutup</button></div>
 <p><b>Terlapor:</b> ${E(s.n)} (${s.nim}, ${s.f})<br><b>Mata kuliah:</b> ${E(c.mk)}<br><b>Pelapor:</b> ${E(c.pel)}<br><b>Tanggal lapor:</b> ${c.tgl} · <b>SLA 30 hari:</b> ${l==null?'selesai':l+' hari tersisa'}</p>
